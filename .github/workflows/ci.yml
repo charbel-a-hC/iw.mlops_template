@@ -1,0 +1,58 @@
+name: CI
+on:
+  pull_request:
+    branches: [develop, master]
+  push:
+    branches: [develop, master]
+
+
+
+
+jobs: 
+  build: 
+    runs-on: ubuntu-latest
+    steps:
+        - name: Checkout repository
+          uses: actions/checkout@v2 
+
+        - name: Set up Python
+          uses: actions/setup-python@v2
+          with:
+            python-version: 3.8  
+
+        # Cache Python dependencies
+        - name: Cache Python dependencies
+          uses: actions/cache@v2
+          with:
+            path: ~/.cache/pip  # The path to your pip cache directory 
+            key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+  
+        - name: Install dependencies
+          run: |
+            pip install -r requirements.txt 
+
+        - name: Run Pylint and fail if rating is less than 1/10
+          run: |
+            pylint --fail-under=1 --recursive=y --enable=W $(find . -type f -name "*.py")
+
+        - name: Run pytest
+          run: pytest  --html="coverage/report.html"
+
+        - name: Upload Test Coverage
+          uses: actions/upload-artifact@v1
+          with:
+            name: code-coverage
+            path: coverage
+        
+        - name: Login to wandb
+          run: python3 mlops_utils/wandb_login.py --wandb_api_key=${{ secrets.WANDB_API_KEY }}
+
+        - name: Checks if new model is better
+          run: python3 mlops_utils/merge_master.py --readme_path=README.md 
+
+        # - name: Build and push Docker image
+        #   uses: docker/build-push-action@v2
+        #   with:
+        #     context: .  # Path to the directory containing your Dockerfile (the current directory in this case)
+        #     push: false  # Set to 'false' if you only want to build the image and not push it
+
