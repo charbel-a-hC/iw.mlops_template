@@ -5,7 +5,10 @@ on:
   push:
     branches: [develop, master]
 
-
+env:
+  PYTHON_VERSION: "3.9"
+  POETRY_VERSION: "1.1.15"
+  POETRY_URL: https://install.python-poetry.org
 
 
 jobs: 
@@ -15,21 +18,29 @@ jobs:
         - name: Checkout repository
           uses: actions/checkout@v2 
 
-        - name: Set up Python
-          uses: actions/setup-python@v2
+        - name: Set up Python ${{ env.PYTHON_VERSION }}
+          uses: actions/setup-python@v4
           with:
-            python-version: 3.8  
-
-        # Cache Python dependencies
-        - name: Cache Python dependencies
-          uses: actions/cache@v2
+            python-version: ${{ env.PYTHON_VERSION }}
+          id: setup_python
+        # Poetry cache depends on OS, Python version and Poetry version.
+        - name: Cache Poetry cache
+          uses: actions/cache@v3
           with:
-            path: ~/.cache/pip  # The path to your pip cache directory 
-            key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-  
-        - name: Install dependencies
+            path: ~/.cache/pypoetry
+            key: poetry-cache-${{ runner.os }}-${{ steps.setup_python.outputs.python-version }}-${{ env.POETRY_VERSION }}
+        # virtualenv cache should depends on OS, Python version and `poetry.lock` (and optionally workflow files).
+        - name: Cache Packages
+          uses: actions/cache@v3
+          with:
+            path: ~/.local
+            key: poetry-local-${{ runner.os }}-${{ steps.setup_python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}-${{ hashFiles('.github/workflows/*.yml') }}
+        - name: Install Poetry ${{ env.POETRY_VERSION }}
           run: |
-            pip install -r requirements.txt 
+            curl -sSL ${{ env.POETRY_URL }} | python - --version ${{ env.POETRY_VERSION }}
+            echo "$HOME/.local/bin" >> $GITHUB_PATH
+        - name: Install Dependencies
+          run: poetry install
 
         - name: Run Pylint and fail if rating is less than 1/10
           run: |
