@@ -41,10 +41,11 @@ jobs:
             echo "$HOME/.local/bin" >> $GITHUB_PATH
         - name: Install Dependencies
           run: poetry install
-
+        
+        # Ignored import errors through E0401 disable
         - name: Run Pylint and fail if rating is less than 1/10
           run: |
-            pylint --fail-under=1 --recursive=y --enable=W $(find . -type f -name "*.py")
+            find . \( -type d -name 'sample_main' -o -type d -name '.venv' \) -prune -o -type f -name '*.py' -print | xargs pylint --disable=E0401
 
         - name: Run pytest
           run: pytest  --html="coverage/report.html"
