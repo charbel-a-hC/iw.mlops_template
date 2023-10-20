@@ -9,6 +9,7 @@ license = ""
 python = "3.9.*"
 wandb = "^0.15.12"
 pytest = "^7.4.2"
+pytest-html = "^4.0.2"
 
 [tool.poetry.dev-dependencies]
 poethepoet = "^0.10.0"
