@@ -1,6 +1,6 @@
 import argparse
 import wandb
-from utils.parse_readme import parse_readme
+from parse_readme import parse_readme
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--readme_path", type=str)
