@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "MLOPs Template"
-version = ""
+version = "0.1.0"
 description = "Template Machine Learning Development Repo"
 authors = ["Charbel Abi Hana <charbel-a-h@outlook.com>"]
 license = ""
