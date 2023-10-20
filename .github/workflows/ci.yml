@@ -45,7 +45,7 @@ jobs:
         # Ignored import errors through E0401 disable
         - name: Run Pylint and fail if rating is less than 1/10
           run: |
-            find . \( -type d -name 'sample_main' -o -type d -name '.venv' \) -prune -o -type f -name '*.py' -print | xargs pylint --disable=E0401
+            find . \( -type d -name 'sample_main' -o -type d -name '.venv' \) -prune -o -type f -name '*.py' -print | xargs pylint --disable=E0401 --fail-under=1.0
 
         - name: Run pytest
           run: pytest  --html="coverage/report.html"
