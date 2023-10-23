@@ -5,7 +5,8 @@ import wandb
 from typing import List
 from model import create_model
 from dataset import get_dataset
-from ..mlops_utils.parse_readme import update_readme
+from mlops_utils.parse_readme import update_readme
+import os
 
 @dataclass
 class TFMetrics:
@@ -20,14 +21,12 @@ class TFRunner:
         self.wandb_entity: str = wandb_entity
         self.wandb_tags: List[str] = wandb_tags
         self.sweep_id: int = sweep_id
-        
-        # Instantiate an optimizer.
-        self.optimizer = keras.optimizers.SGD(learning_rate=1e-3)
+
         # Instantiate a loss function.
         self.loss_fn = keras.losses.SparseCategoricalCrossentropy(from_logits=True)
         # Instatiate metrics
         self.metrics = TFMetrics(train_metric= tf.metrics.SparseCategoricalCrossentropy(), 
-                                 val_metric=tf.metrics.SparseCategoricalCrossentropy())
+                                    val_metric=tf.metrics.SparseCategoricalCrossentropy())
 
     @tf.function
     def train_step(self, x, y):
@@ -44,19 +43,21 @@ class TFRunner:
         self.metrics.val_metric.update_state(y, val_logits)
     
     def fit(self):
+
+        # Instantiate an optimizer.
+        self.optimizer = keras.optimizers.SGD(learning_rate=1e-3)
+        
         run = wandb.init(
             project=self.wandb_project, entity=self.wandb_entity, tags=self.wandb_tags
         )
-        
         self.config = wandb.config
 
         self.model = create_model(self.config.dense_layers)
-        self.train_dataset, self.val_datset = get_dataset(self.config.batch_size, self.config.train_samples)
+        self.train_dataset, self.val_dataset = get_dataset(self.config.batch_size, self.config.train_samples)
 
         wandb.run.name = (
                 f"sample-mlops-batch_size-{self.config.batch_size}-epochs-{self.config.epochs}"
             )
-    
         for epoch in range(self.config.epochs):
             # Iterate over the batches of the dataset.
             for x_batch_train, y_batch_train in self.train_dataset:
@@ -84,5 +85,4 @@ class TFRunner:
                     wandb.log({f"testing/{key}": value})
 
             print(f"Epoch: {epoch}/{self.config.epochs} " + out)
-        
-        update_readme(run.get_url().split("/")[-1].split()[0], "./README.md")
+        update_readme(run_id=run.get_url().split("/")[-1].split()[0], entity=self.wandb_entity, project=self.wandb_project, readme_path="./README.md")
