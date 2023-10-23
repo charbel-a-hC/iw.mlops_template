@@ -1,0 +1,17 @@
+{
+  "name": "sample",
+  "sweeps_params": {
+    "metric": {
+      "goal": "minimize", 
+      "name": "testing/val_metric"
+    },
+    "method": "grid",
+    "parameters": {
+      "train_samples": {"values": [10000]},
+      "dense_layers": {"values": [[32, 64], [64, 64]]},
+      "batch_size": { "values": [16, 32] },
+      "random_seed": { "values": [0] },
+      "epochs": {"values": [10, 20, 30]}
+    }
+  }
+}
