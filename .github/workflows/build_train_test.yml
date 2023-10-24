@@ -3,7 +3,7 @@ name: Build Train Automation
 on:
   push:
     branches:
-      - "feature/add-hosted-training-building"
+      - "feature/sample_training"
 env:
   REPO_NAME: ${{ github.event.repository.name }}
   DOCKER_BUILDKIT: 1
