@@ -2,11 +2,11 @@ import tensorflow as tf
 from dataclasses import dataclass, fields
 import keras
 import wandb
-from typing import List
+from typing import List, Any
 from model import create_model
 from dataset import get_dataset
-from mlops_utils.parse_readme import update_readme
-import os
+from mlops_utils.parse_readme import parse_readme, update_readme
+from mlops_utils.logger import get_logger
 
 @dataclass
 class TFMetrics:
@@ -15,7 +15,9 @@ class TFMetrics:
 
 
 class TFRunner:
-    def __init__(self, sweep_id, wandb_project, wandb_entity, wandb_tags):
+    logger = get_logger(description="TFRunner")
+
+    def __init__(self, sweep_id, wandb_project, wandb_entity, wandb_tags, **kwargs):
         # Setup WandB parameters
         self.wandb_project: str = wandb_project
         self.wandb_entity: str = wandb_entity
@@ -27,26 +29,28 @@ class TFRunner:
         # Instatiate metrics
         self.metrics = TFMetrics(train_metric= tf.metrics.SparseCategoricalCrossentropy(), 
                                     val_metric=tf.metrics.SparseCategoricalCrossentropy())
+        
+        self.push_args = kwargs["push_args"]
 
-    @tf.function
-    def train_step(self, x, y):
-        with tf.GradientTape() as tape:
-            logits = self.model(x, training=True)
-            loss_value = self.loss_fn(y, logits)
-        grads = tape.gradient(loss_value, self.model.trainable_weights)
-        self.optimizer.apply_gradients(zip(grads, self.model.trainable_weights))
-        self.metrics.train_metric.update_state(y, logits)
-
-    @tf.function
-    def val_step(self, x, y):
-        val_logits = self.model(x, training=False)
-        self.metrics.val_metric.update_state(y, val_logits)
-    
     def fit(self):
 
+        @tf.function
+        def train_step(x, y, optimizer):
+            with tf.GradientTape() as tape:
+                logits = self.model(x, training=True)
+                loss_value = self.loss_fn(y, logits)
+            grads = tape.gradient(loss_value, self.model.trainable_weights)
+            optimizer.apply_gradients(zip(grads, self.model.trainable_weights))
+            self.metrics.train_metric.update_state(y, logits)
+
+        @tf.function
+        def val_step(x, y):
+            val_logits = self.model(x, training=False)
+            self.metrics.val_metric.update_state(y, val_logits)
+
         # Instantiate an optimizer.
-        self.optimizer = keras.optimizers.SGD(learning_rate=1e-3)
-        
+        optimizer = keras.optimizers.SGD(learning_rate=1e-3)
+
         run = wandb.init(
             project=self.wandb_project, entity=self.wandb_entity, tags=self.wandb_tags
         )
@@ -58,14 +62,15 @@ class TFRunner:
         wandb.run.name = (
                 f"sample-mlops-batch_size-{self.config.batch_size}-epochs-{self.config.epochs}"
             )
+        
         for epoch in range(self.config.epochs):
             # Iterate over the batches of the dataset.
             for x_batch_train, y_batch_train in self.train_dataset:
-                self.train_step(x_batch_train, y_batch_train)
+                train_step(x_batch_train, y_batch_train, optimizer)
                 
             # Run a validation loop at the end of each epoch.
             for x_batch_val, y_batch_val in self.val_dataset:
-                self.val_step(x_batch_val, y_batch_val)
+                val_step(x_batch_val, y_batch_val)
 
             # metrics handling
             metrics = {}
@@ -85,4 +90,31 @@ class TFRunner:
                     wandb.log({f"testing/{key}": value})
 
             print(f"Epoch: {epoch}/{self.config.epochs} " + out)
-        update_readme(run_id=run.get_url().split("/")[-1].split()[0], entity=self.wandb_entity, project=self.wandb_project, readme_path="./README.md")
+
+    def update_best_model(self):
+
+        wandb_api = wandb.Api()
+        sweep = wandb_api.sweep(f"{self.wandb_entity}/{self.wandb_project}/{self.sweep_id}")
+
+        best_run = sweep.best_run()
+        curr_metric = best_run.summary[self.push_args.push_metric]
+
+        _, _, prev_run_id = parse_readme(self.push_args.readme_path)
+
+        if prev_run_id:
+            prev_run = wandb_api.run(f"{self.wandb_entity}/{self.wandb_project}/{prev_run_id}")    
+            prev_metric = prev_run.summary[self.push_args.push_metric]
+
+            if curr_metric < prev_metric:
+                TFRunner.logger.info(f"Best current run is better than README run and < metric threshold ({best_run.id}:{curr_metric:.3f} < {prev_run.id}:{prev_metric:.3f}), updating ...")
+                update_readme(run_id=best_run.id, entity=self.wandb_entity, project=self.wandb_project, readme_path=self.push_args.readme_path)
+            else:
+                TFRunner.logger.info(f"README run is better than current best sweep run ({prev_run.id}:{prev_metric:.3f} < {best_run.id}:{curr_metric:.3f})! README will not be updated!")
+
+        else:
+            TFRunner.logger.info("No previous run found! Checking for threshold constraint ...")
+            if curr_metric < self.push_args.push_threshold:
+                TFRunner.logger.info("Best current run is better than metric threshold, updating ...")
+                update_readme(run_id=best_run.id, entity=self.wandb_entity, project=self.wandb_project, readme_path=self.push_args.readme_path)
+
+    
