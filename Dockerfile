@@ -65,12 +65,11 @@ ENV PATH="$POETRY_HOME/bin:$VENV_PATH/bin:$PATH"
 
 # Create working directory 
 WORKDIR /${REPO_NAME}
-COPY . .
+COPY pyproject.toml ./
+COPY Makefile ./
 
 RUN --mount=type=cache,target=/root/.cache/poetry make env-docker
 
-# TODO: Remove pip install and setup poetry - uncomment top lines
-#RUN --mount=type=cache,target=/root/.cache/pip pip install -r requirements.txt
 
 RUN git config --global --add safe.directory /${REPO_NAME}
 
