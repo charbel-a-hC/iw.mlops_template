@@ -1,5 +1,5 @@
 #FROM nvidia/cuda:${CUDA}-cudnn${CUDNN}-devel-ubuntu18.04 
-FROM nvidia/cuda:11.0.3-cudnn8-devel-ubuntu18.04
+FROM nvidia/cuda:11.0.3-cudnn8-devel-ubuntu20.04
 
 ARG REPO_NAME=${REPO_NAME}
 ENV REPO_NAME=${REPO_NAME}
@@ -29,20 +29,35 @@ RUN apt-get install -y ffmpeg libsm6 libxext6 libgl1
 RUN apt update && apt install -y software-properties-common
 
 # Install System Dependencies
-RUN add-apt-repository ppa:deadsnakes/ppa
-RUN apt update
+RUN add-apt-repository ppa:deadsnakes/ppa 
+RUN apt-get update
 
-RUN apt-get install -y python3.9 \
+# Custom python install, refer to https://packages.ubuntu.com/ to get custom python package
+# install deps
+# RUN apt-get install -y python3.9-minimal=3.9.5-3ubuntu0~20.04.1 \
+#     libpython3.9-minimal=3.9.5-3ubuntu0~20.04.1 \
+#     libpython3.9-stdlib=3.9.5-3ubuntu0~20.04.1 \
+#     libpython3.9-dev=3.9.5-3ubuntu0~20.04.1 \
+#     libpython3.9=3.9.5-3ubuntu0~20.04.1
+
+# RUN apt-get install -y python3.9=3.9.5-3ubuntu0~20.04.1 \
+#     python3-pip=20.0.2-5ubuntu1.9 \
+#     python3.9-venv=3.9.5-3ubuntu0~20.04.1 \
+#     python3.9-dev=3.9.5-3ubuntu0~20.04.1 \
+#     python3-distutils=3.8.10-0ubuntu1~20.04 
+
+RUN apt-get install -y python3.8 \
     python3-pip \
-    python3.9-venv \
-    python3.9-dev \
-    python3.9-distutils \
-    curl \
+    python3.8-venv \
+    python3.8-dev \
+    python3.8-distutils 
+  
+RUN apt-get install -y curl \
     vim \
     git
 
 # Adjust default python3 version to required version
-RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 1
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.8 1
 # Update pip3 version
 RUN python3 -m pip install --upgrade pip
 
@@ -65,13 +80,12 @@ ENV PATH="$POETRY_HOME/bin:$VENV_PATH/bin:$PATH"
 
 # Create working directory 
 WORKDIR /${REPO_NAME}
-COPY pyproject.toml ./
+# Change to current project toml and lock
+COPY sample_main/pyproject.toml sample_main/poetry.lock ./
 COPY Makefile ./
 
-RUN --mount=type=cache,target=/root/.cache/poetry make env-docker
+RUN --mount=type=cache,target=$POETRY_CACHE_DIR make env-docker
 
+COPY entrypoint.sh ./
 
-RUN git config --global --add safe.directory /${REPO_NAME}
-
-#CMD ["python3", "./main.py"]
-CMD ["python3", "sample_main/main.py"]
+ENTRYPOINT [ "/entrypoint.sh" ]
