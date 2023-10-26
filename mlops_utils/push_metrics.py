@@ -1,7 +1,7 @@
 import argparse
 import wandb
-from parse_readme import parse_readme
-from logger import get_logger
+from mlops_utils.parse_readme import parse_readme
+from mlops_utils.logger import get_logger
 
 def populate_push_metrics_parser(parser: argparse.ArgumentParser):
 
