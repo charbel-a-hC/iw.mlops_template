@@ -35,9 +35,32 @@ jobs:
         run:
           docker run --rm -e WANDB_API_KEY="${{ secrets.WANDB_API_KEY }}" -e WANDB_DOCKER="$REPO_NAME" -e REPO_NAME=$REPO_NAME --gpus all -v ${PWD}:/$REPO_NAME $REPO_NAME sample_main/main.py --config sample_main/sample.config.json --project sample-mlops --push_metric testing/val_metric --push_threshod 3.
   
+  paths-filter:
+    needs: build
+    runs-on: [self-hosted, theia]
+    outputs:
+      output1: ${{ steps.filter.outputs.readme }}
+    steps:
+    - uses: actions/checkout@v2
+    - uses: dorny/paths-filter@v2
+      id: filter
+      with:
+        filters: |
+          readme:
+            - 'README.md'
+    # run only if 'workflows' files were changed
+    - name: readme tests
+      if: steps.filter.outputs.readme == 'true'
+      run: echo "readme file changed due to improved training"
+
+    # run only if not 'workflows' files were changed
+    - name: not readme tests
+      if: steps.filter.outputs.readme != 'true'
+      run: echo "readme file NOT changed due to improved training"
+    
   test:
     name: Test on Xavier
-    needs: build
+    needs: [build, train]
     runs-on: [self-hosted, adlink]
     steps:
       - name: Echo something

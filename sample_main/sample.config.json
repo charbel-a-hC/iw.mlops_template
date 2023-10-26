@@ -8,10 +8,10 @@
     "method": "grid",
     "parameters": {
       "train_samples": {"values": [10000]},
-      "dense_layers": {"values": [[16, 32], [32, 64]]},
-      "batch_size": { "values": [16, 32] },
+      "dense_layers": {"values": [[16, 32]]},
+      "batch_size": { "values": [16] },
       "random_seed": { "values": [0] },
-      "epochs": {"values": [20, 50, 100]}
+      "epochs": {"values": [10]}
     }
   }
 }
