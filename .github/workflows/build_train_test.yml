@@ -19,7 +19,12 @@ jobs:
     name: Build and Push Image
     runs-on: [self-hosted, theia]
     if: contains(github.event.head_commit.message, '[train]')
+
     steps:
+      - name: Chown user
+        run: |
+          sudo chown -R $USER:$USER $GITHUB_WORKSPACE
+          
       - name: Check out code
         uses: actions/checkout@v2
       
