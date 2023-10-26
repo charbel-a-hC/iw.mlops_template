@@ -6,6 +6,13 @@ on:
 env:
   REPO_NAME: ${{ github.event.repository.name }}
   DOCKER_BUILDKIT: 1
+  MAIN_PATH: "sample_main/main.py"
+  ARG_CONFIG: "sample_main/sample.config.json"
+  ARG_PUSH_METRIC: "testing/val_metric"
+  ARG_PUSH_THRESHOLD: 3.0
+  ARG_WANDB_PROJECT: "sample-mlops"
+  ARG_GPUS: "all"
+
 
 jobs:
   build:
@@ -33,7 +40,7 @@ jobs:
       
       - name: Run Container
         run:
-          docker run --rm -e WANDB_API_KEY="${{ secrets.WANDB_API_KEY }}" -e WANDB_DOCKER="$REPO_NAME" -e REPO_NAME=$REPO_NAME --gpus all -v ${PWD}:/$REPO_NAME $REPO_NAME sample_main/main.py --config sample_main/sample.config.json --project sample-mlops --push_metric testing/val_metric --push_threshod 3.
+          docker run --rm -e WANDB_API_KEY="${{ secrets.WANDB_API_KEY }}" -e WANDB_DOCKER="$REPO_NAME" -e REPO_NAME=$REPO_NAME --gpus $ARG_GPUS -v ${PWD}:/$REPO_NAME $REPO_NAME sample_main/main.py --config $ARG_CONFIG --project $ARG_PROJECT --push_metric $ARG_PUSH_METRIC --push_threshold $ARG_PUSH_THREHSOLD 
   
   paths-filter:
     needs: [build, train]
