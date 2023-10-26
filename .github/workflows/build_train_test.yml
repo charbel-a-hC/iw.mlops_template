@@ -23,7 +23,7 @@ jobs:
     steps:
       - name: Chown user
         run: |
-          echo ${{secrets.DEPLOY_PASSWORD}} | sudo chown -R $USER:$USER $GITHUB_WORKSPACE
+          echo ${{secrets.DEPLOY_PASSWORD}} |sudo chown -R $USER:$USER $GITHUB_WORKSPACE
 
       - name: Check out code
         uses: actions/checkout@v2
@@ -53,22 +53,20 @@ jobs:
     outputs:
       output1: ${{ steps.filter.outputs.readme }}
     steps:
-      - name: Chown user
-        run: |
-          echo ${{secrets.DEPLOY_PASSWORD}} | sudo chown -R $USER:$USER $GITHUB_WORKSPACE
-
-      - name: Filter README    
-        uses: dorny/paths-filter@v2
-        id: filter
-        with:
-          filters: |
-            readme:
-              - 'README.md'
-
-        # run only if 'workflows' files were changed
-      - name: readme tests
-        if: steps.filter.outputs.readme == 'true'
-        run: echo "readme file changed due to improved training"
+    - name: Chown user
+      run: |
+        echo ${{secrets.DEPLOY_PASSWORD}} |sudo chown -R $USER:$USER $GITHUB_WORKSPACE 
+    - uses: actions/checkout@v2
+    - uses: dorny/paths-filter@v2
+      id: filter
+      with:
+        filters: |
+          readme:
+            - 'README.md'
+    # run only if 'workflows' files were changed
+    - name: readme tests
+      if: steps.filter.outputs.readme == 'true'
+      run: echo "readme file changed due to improved training"
 
     # run only if not 'workflows' files were changed
     - name: not readme tests
