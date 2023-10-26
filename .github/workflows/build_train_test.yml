@@ -58,13 +58,13 @@ jobs:
           echo ${{secrets.DEPLOY_PASSWORD}} | sudo chown -R $USER:$USER $GITHUB_WORKSPACE
 
       - name: Filter README    
-        - uses: dorny/paths-filter@v2
-          id: filter
-          with:
-            filters: |
-              readme:
-                - 'README.md'
-                
+        uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            readme:
+              - 'README.md'
+
         # run only if 'workflows' files were changed
       - name: readme tests
         if: steps.filter.outputs.readme == 'true'
