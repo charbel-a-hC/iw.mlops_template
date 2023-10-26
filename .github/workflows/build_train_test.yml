@@ -36,7 +36,7 @@ jobs:
           docker run --rm -e WANDB_API_KEY="${{ secrets.WANDB_API_KEY }}" -e WANDB_DOCKER="$REPO_NAME" -e REPO_NAME=$REPO_NAME --gpus all -v ${PWD}:/$REPO_NAME $REPO_NAME sample_main/main.py --config sample_main/sample.config.json --project sample-mlops --push_metric testing/val_metric --push_threshod 3.
   
   paths-filter:
-    needs: build
+    needs: [build, train]
     runs-on: [self-hosted, theia]
     outputs:
       output1: ${{ steps.filter.outputs.readme }}
