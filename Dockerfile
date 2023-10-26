@@ -81,7 +81,7 @@ ENV PATH="$POETRY_HOME/bin:$VENV_PATH/bin:$PATH"
 # Create working directory 
 WORKDIR /${REPO_NAME}
 # Change to current project toml and lock
-COPY sample_main/pyproject.toml sample_main/poetry.lock ./
+COPY pyproject.toml poetry.lock ./
 COPY Makefile ./
 
 RUN --mount=type=cache,target=$POETRY_CACHE_DIR make env-docker
