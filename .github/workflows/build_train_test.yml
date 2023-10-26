@@ -12,16 +12,16 @@ jobs:
     name: Build and Push Image
     runs-on: [self-hosted, theia]
     if: contains(github.event.head_commit.message, '[train]')
-      steps:
-        - name: Check out code
-          uses: actions/checkout@v2
-        
-        - name: Create Docker Image
-          env:
-            IMAGE_TAG: latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+      
+      - name: Create Docker Image
+        env:
+          IMAGE_TAG: latest
 
-          run:
-            docker build -t $REPO_NAME:$IMAGE_TAG .
+        run:
+          docker build -t $REPO_NAME:$IMAGE_TAG .
   
   train:
     name: Train based on built image
