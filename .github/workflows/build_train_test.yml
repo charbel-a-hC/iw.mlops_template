@@ -10,7 +10,7 @@ env:
   ARG_CONFIG: "sample_main/sample.config.json"
   ARG_PUSH_METRIC: "testing/val_metric"
   ARG_PUSH_THRESHOLD: 3.0
-  ARG_WANDB_PROJECT: "sample-mlops"
+  ARG_PROJECT: "sample-mlops"
   ARG_GPUS: "all"
 
 
