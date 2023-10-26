@@ -16,7 +16,8 @@ def parse_readme(readme_path):
 
 def update_readme(run_id, entity, project, readme_path):
     WANDB_URL = "https://wandb.ai/"
-
+    TRIGGER_README_WORDS = ["best model", "model", "URL"]
+    
     with open(readme_path, "r") as f:
         content = f.readlines()
 
@@ -28,7 +29,7 @@ def update_readme(run_id, entity, project, readme_path):
     for i, line in enumerate(content):
         if "wandb.ai" in line:
             url_idx = i
-        if "best model" in line.lower():
+        if any([el.lower() in line.lower() for el in TRIGGER_README_WORDS]):
             best_model_idx = i
     
     if url_idx:
