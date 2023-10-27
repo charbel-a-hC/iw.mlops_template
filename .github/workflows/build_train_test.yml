@@ -12,6 +12,9 @@ env:
   ARG_PUSH_THRESHOLD: "3.0"
   ARG_PROJECT: "sample-mlops"
   ARG_GPUS: "all"
+  GIT_USERNAME: "charbel-a-hC"
+  GIT_EMAIL: "charbel-a-h@outlook.com"
+  BEST_RUN_ID: ""
 
 
 jobs:
@@ -53,10 +56,7 @@ jobs:
     outputs:
       output1: ${{ steps.filter.outputs.readme }}
     steps:
-    - name: Chown user
-      run: |
-        echo ${{secrets.DEPLOY_PASSWORD}} |sudo chown -R $USER:$USER $GITHUB_WORKSPACE 
-    
+
     - name: Filter README  
       uses: dorny/paths-filter@v2.2.0
       id: filter
@@ -65,9 +65,22 @@ jobs:
           readme:
             - 'README.md'
     # run only if 'workflows' files were changed
-    - name: readme tests
+    - name: Get run ID if file changed
       if: steps.filter.outputs.readme == 'true'
-      run: echo "readme file changed due to improved training"
+      run: |
+        export PYTHONPATH=${PWD}:$PYTHONPATH
+        $BEST_RUN_ID=$(python3 mlops_utils/get_best_run.py)
+
+    - name: Commit and push changes if file changed
+      if: steps.filter.outputs.readme == 'true'
+      run: |
+        git config --global user.name $GIT_USERNAME
+        git config --global user.email $GIT_EMAIL
+
+        git add README.md
+        git commit -m "updated model to run $BEST_RUN_ID"
+        git push
+      
 
     # run only if not 'workflows' files were changed
     - name: not readme tests
