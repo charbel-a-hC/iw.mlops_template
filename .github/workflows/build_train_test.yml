@@ -56,8 +56,12 @@ jobs:
     - name: Chown user
       run: |
         echo ${{secrets.DEPLOY_PASSWORD}} |sudo chown -R $USER:$USER $GITHUB_WORKSPACE 
-  
-    - uses: dorny/paths-filter@v2
+    
+    - name: Check out code
+      uses: actions/checkout@v2
+    
+    -name: Filter README  
+      uses: dorny/paths-filter@v2
       id: filter
       with:
         filters: |
