@@ -60,7 +60,7 @@ jobs:
     - name: Check out code
       uses: actions/checkout@v2
     
-    -name: Filter README  
+    - name: Filter README  
       uses: dorny/paths-filter@v2
       id: filter
       with:
