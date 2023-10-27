@@ -60,6 +60,10 @@ jobs:
     - name: Check out code
       uses: actions/checkout@v2
     
+    - name: check what's in the directory
+      run: |
+        ls
+        
     - name: Filter README  
       uses: dorny/paths-filter@v2.10.1
       id: filter
