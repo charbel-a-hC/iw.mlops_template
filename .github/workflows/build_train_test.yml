@@ -61,7 +61,7 @@ jobs:
       uses: actions/checkout@v2
     
     - name: Filter README  
-      uses: dorny/paths-filter@v2
+      uses: dorny/paths-filter@v2.10.1
       id: filter
       with:
         filters: |
