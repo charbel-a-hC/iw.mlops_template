@@ -11,7 +11,7 @@
       "dense_layers": {"values": [[16, 32]]},
       "batch_size": { "values": [16] },
       "random_seed": { "values": [0] },
-      "epochs": {"values": [10, 20]}
+      "epochs": {"values": [10, 5]}
     }
   }
 }
