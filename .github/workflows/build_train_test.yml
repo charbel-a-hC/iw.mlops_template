@@ -71,7 +71,7 @@ jobs:
       run: |
         ls
         export PYTHONPATH=${PWD}:$PYTHONPATH
-        $BEST_RUN_ID=$(python3 mlops_utils/get_best_run.py)
+        BEST_RUN_ID="$(python3 mlops_utils/get_best_run.py)"
 
     - name: Commit and push changes if file changed
       if: steps.filter.outputs.readme == 'true'
