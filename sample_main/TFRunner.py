@@ -114,7 +114,7 @@ class TFRunner:
         else:
             TFRunner.logger.info("No previous run found! Checking for threshold constraint ...")
             if curr_metric < self.push_args.push_threshold:
-                TFRunner.logger.info("Best current run is better than metric threshold, updating ...")
+                TFRunner.logger.info(f"Best current run is better than metric threshold ({best_run.id}:{curr_metric:.3f} < threshold: {self.push_args.push_threshold}), updating ...")
                 update_readme(run_id=best_run.id, entity=self.wandb_entity, project=self.wandb_project, readme_path=self.push_args.readme_path)
 
     
