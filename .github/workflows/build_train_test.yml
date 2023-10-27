@@ -50,7 +50,8 @@ jobs:
         run:
           docker run --rm -e WANDB_API_KEY="${{ secrets.WANDB_API_KEY }}" -e WANDB_DOCKER="$REPO_NAME" -e REPO_NAME=$REPO_NAME --gpus $ARG_GPUS -v ${PWD}:/$REPO_NAME $REPO_NAME sample_main/main.py --config $ARG_CONFIG --project $ARG_PROJECT --push_metric $ARG_PUSH_METRIC --push_threshold $ARG_PUSH_THRESHOLD 
   
-  paths-filter:
+  commit-and-push-readme:
+    name:  Update changes to README
     needs: [build, train]
     runs-on: [self-hosted, theia]
     outputs:
