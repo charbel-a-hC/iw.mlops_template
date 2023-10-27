@@ -68,6 +68,7 @@ jobs:
     - name: Get run ID if file changed
       if: steps.filter.outputs.readme == 'true'
       run: |
+        ls
         export PYTHONPATH=${PWD}:$PYTHONPATH
         $BEST_RUN_ID=$(python3 mlops_utils/get_best_run.py)
 
