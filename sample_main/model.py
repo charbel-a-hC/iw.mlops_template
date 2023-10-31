@@ -6,7 +6,7 @@ def create_model(dense_layers: List[int]):
 
     inputs = keras.Input(shape=(784,), name="digits")
     
-    for idx, layer in enumerate(layers):
+    for idx, layer in enumerate(dense_layers):
         if idx == 0:
             x = layers.Dense(layer, activation="relu")(inputs)
         else:

@@ -1,0 +1,118 @@
+name: Build Train Automation
+on:
+  push:
+    branches:
+      - "feature/sample_training"
+env:
+  REPO_NAME: ${{ github.event.repository.name }}
+  DOCKER_BUILDKIT: 1
+  MAIN_PATH: "sample_main/main.py"
+  ARG_CONFIG: "sample_main/sample.config.json"
+  ARG_PUSH_METRIC: "testing/val_metric"
+  ARG_PUSH_THRESHOLD: "3.0"
+  ARG_PROJECT: "sample-mlops"
+  ARG_GPUS: "all"
+  GIT_USERNAME: "charbel-a-hC"
+  GIT_EMAIL: "charbel-a-h@outlook.com"
+  BEST_RUN_ID: ""
+
+
+jobs:
+  build:
+    name: Build and Push Image
+    runs-on: [self-hosted, theia]
+    if: contains(github.event.head_commit.message, '[train]')
+
+    steps:
+      - name: Chown user
+        run: |
+          echo ${{secrets.DEPLOY_PASSWORD}} |sudo chown -R $USER:$USER $GITHUB_WORKSPACE
+
+      - name: Check out code
+        uses: actions/checkout@v2
+      
+      - name: Create Docker Image
+        env:
+          IMAGE_TAG: latest
+
+        run:
+          docker build -t $REPO_NAME:$IMAGE_TAG .
+  
+  train:
+    name: Train based on built image
+    needs: build
+    runs-on: [self-hosted, theia]
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+      
+      - name: Run Container
+        run:
+          docker run --rm -e WANDB_API_KEY="${{ secrets.WANDB_API_KEY }}" -e WANDB_DOCKER="$REPO_NAME" -e REPO_NAME=$REPO_NAME --gpus $ARG_GPUS -v ${PWD}:/$REPO_NAME $REPO_NAME sample_main/main.py --config $ARG_CONFIG --project $ARG_PROJECT --push_metric $ARG_PUSH_METRIC --push_threshold $ARG_PUSH_THRESHOLD 
+  
+  commit-and-push-readme:
+    name:  Update changes to README
+    needs: [build, train]
+    runs-on: [self-hosted, theia]
+    outputs:
+      output1: ${{ steps.filter.outputs.readme }}
+    steps:
+
+    - name: Filter README  
+      uses: dorny/paths-filter@v2.2.0
+      id: filter
+      with:
+        filters: |
+          readme:
+            - 'README.md'
+    # run only if 'workflows' files were changed
+    - name: Get run ID if file changed
+      if: steps.filter.outputs.readme == 'true'
+      run: |
+        export PYTHONPATH=${PWD}:$PYTHONPATH
+        BEST_RUN_ID="$(python3 mlops_utils/get_best_run.py)"
+
+    - name: Commit and push changes if file changed
+      if: steps.filter.outputs.readme == 'true'
+      run: |
+        git config --global user.name $GIT_USERNAME
+        git config --global user.email $GIT_EMAIL
+
+        git add README.md
+        git commit -m "updated model to run $BEST_RUN_ID"
+        git push
+      
+
+    # run only if not 'workflows' files were changed
+    - name: not readme tests
+      if: steps.filter.outputs.readme != 'true'
+      run: echo "readme file NOT changed due to improved training"
+    
+  test:
+    name: Test on Xavier
+    needs: [build, train]
+    runs-on: [self-hosted, adlink]
+    steps:
+      - name: Echo something
+        run: echo "this is the testing job"
+    # - name: Configure AWS credentials
+    #   uses: aws-actions/configure-aws-credentials@v1
+    #   with:
+    #     aws-access-key-id: ${{ secrets.USR_AWS_ACCESS_KEY_ID }}
+    #     aws-secret-access-key: ${{ secrets.USR_AWS_SECRET_ACCESS_KEY }}
+    #     aws-region: eu-central-1
+
+    # - name: Login to Amazon ECR
+    #   id: login-ecr
+    #   uses: aws-actions/amazon-ecr-login@v1
+
+    # - name: Build, tag, and push image to Amazon ECR
+    #   env:
+    #     ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+    #     ECR_REPOSITORY: ai-team-awarness
+    #     IMAGE_NAME: ${{ github.event.repository.name }}
+    #     IMAGE_TAG: latest
+    #   run: |
+    #     docker build -t $IMAGE_NAME:$IMAGE_TAG .
+    #     docker tag $IMAGE_NAME:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_NAME-$IMAGE_TAG
+    #     docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_NAME-$IMAGE_TAG
